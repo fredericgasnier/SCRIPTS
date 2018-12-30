@@ -1,0 +1,54 @@
+git init
+git add .
+git commit -m"first commit"
+git config --global user.name "fredericgasnier"
+git config --global user.email fredo95100@gmail.com
+git commit --amend --reset-author
+git remote -v
+git remote add origin https://github.com/fredericgasnier/docker.git
+git clone https://github.com/fredericgasnier/docker.git
+git status
+git commit -m"Commit file"
+git push origin master
+git push origin master
+
+
+wget https://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud-1808.qcow2
+
+
+sudo yum install qemu-kvm qemu-img virt-manager libvirt libvirt-python libvirt-client virt-install virt-viewer bridge-utils
+
+sudo yum install kvm virt-manager libvirt libvirt-python libguestfs-tools
+export LIBGUESTFS_BACKEND=direct
+virt-tar-out -a CentOS-7-x86_64-GenericCloud-1808.qcow2 / - | gzip --best > centos.tgz
+
+
+
+git clone https://github.com/fredericgasnier/docker-apache2.git
+docker build -t myapache2 .
+
+docker inspect --format='{{.NetworkSettings.IPAddress}}' ap
+wget -qO - 172.17.0.4
+
+docker run -d --name ap2 -p 8090:80 myapache2
+docker run -d --name ap1 -p 80 myapache2
+
+docker exec -it super /bin/bash
+
+docker run -it -v /var/run/socket.sock:/var/run/socket.sock ubuntu:latest sh -c "apt-get update; apt-get install docker.io -y; bash"
+
+
+MAILER_CID=$(docker run -d gekkopromo/mailer)
+WEB_CID=$(docker create nginx)
+AGENT_CID=$(docker create --link $WEB_CID:insideweb --link $MAILER_CID:insidemailer gekkopromo/agent)
+docker start $AGENT_CID
+docker start $WEB_CID
+
+
+docker run -d --volume /var/lib/cassandra/data --name cass-shared alpine echo Data Container
+
+docker volume ls
+
+docker run --rm -it --network cassandra_default --link cassandra_cass2_1:cass cassandra:2.2 cqlsh cassandra_cass2_1
+
+docker stop `docker ps -aq` && docker rm `docker ps -aq`
