@@ -1,0 +1,162 @@
+#!/bin/sh
+#
+# firewall-gateway.sh
+#test
+#test1
+# Commandes
+IPT=/sbin/iptables
+MOD=/sbin/modprobe
+SYS=/sbin/sysctl
+SERVICE=/usr/sbin/service
+#for i in $(ls -rt1 /lib/modules/3.10.0-957.1.3.el7.x86_64/kernel/net/ipv4/netfilter/ip_table* /lib/modules/3.10.0-957.1.3.el7.x86_64/kernel/net/ipv4/netfilter/iptable*); do insmod $i; done
+modprobe -a iptable_nat
+modprobe -a iptable_filter
+modprobe -a iptable_mangle
+# Internet
+IFACE_INET=enp0s3
+
+# Réseau local
+IFACE_LAN=enp0s8
+IFACE_LAN_IP=192.168.33.0/24
+
+# Serveur
+SERVER_IP=192.168.33.1
+
+case $1 in
+start)
+# Activer le relais des paquets ? (yes/no)
+MASQ=yes
+
+# Politique par défaut
+# Tout accepter
+$IPT -t filter -P INPUT ACCEPT
+$IPT -t filter -P FORWARD ACCEPT
+$IPT -t filter -P OUTPUT ACCEPT
+$IPT -t nat -P PREROUTING ACCEPT
+$IPT -t nat -P POSTROUTING ACCEPT
+$IPT -t nat -P OUTPUT ACCEPT
+$IPT -t mangle -P PREROUTING ACCEPT
+$IPT -t mangle -P INPUT ACCEPT
+$IPT -t mangle -P FORWARD ACCEPT
+$IPT -t mangle -P OUTPUT ACCEPT
+$IPT -t mangle -P POSTROUTING ACCEPT
+
+# Remettre les compteurs à zéro
+$IPT -t filter -Z
+$IPT -t nat -Z
+$IPT -t mangle -Z
+
+# Supprimer toutes les règles actives et les chaînes personnalisées
+$IPT -t filter -F
+$IPT -t filter -X
+$IPT -t nat -F
+$IPT -t nat -X
+$IPT -t mangle -F
+$IPT -t mangle -X
+
+# Désactiver le relais des paquets
+$SYS -q -w net.ipv4.ip_forward=0
+
+# Politique par défaut
+$IPT -P INPUT DROP
+$IPT -P FORWARD DROP
+$IPT -P OUTPUT DROP
+
+# Connexions établies
+$IPT -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+$IPT -I FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT
+$IPT -I OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+# Faire confiance à nous-mêmes ;o)
+$IPT -A INPUT -i lo -j ACCEPT
+
+# Ping
+$IPT -A INPUT -p icmp --icmp-type echo-request -j ACCEPT
+$IPT -A INPUT -p icmp --icmp-type time-exceeded -j ACCEPT
+$IPT -A INPUT -p icmp --icmp-type destination-unreachable -j ACCEPT
+
+$IPT -A FORWARD -s 192.168.33.0/24 -p icmp --icmp-type echo-request -j ACCEPT
+$IPT -A FORWARD -s 192.168.33.0/24 -p icmp --icmp-type time-exceeded -j ACCEPT
+$IPT -A FORWARD -s 192.168.33.0/24 -p icmp --icmp-type destination-unreachable -j ACCEPT
+
+$IPT -A OUTPUT -p icmp --icmp-type echo-request -j ACCEPT
+$IPT -A OUTPUT -p icmp --icmp-type time-exceeded -j ACCEPT
+$IPT -A OUTPUT -p icmp --icmp-type destination-unreachable -j ACCEPT
+
+#Accès DNS
+$IPT -t filter -A INPUT -p udp --dport 53 -j ACCEPT
+$IPT -t filter -A INPUT -p tcp --dport 53 -j ACCEPT
+$IPT -t filter -A FORWARD -p tcp --dport 53 -j ACCEPT
+#$IPT -t filter -A FORWARD -i enp0s8 -o enp0s3 -s 192.168.33.0/24 -p tcp --dport 53 -j ACCEPT
+$IPT -t filter -A FORWARD -p udp --dport 53 -j ACCEPT
+#$IPT -t filter -A FORWARD -i enp0s8 -o enp0s3 -s 192.168.33.0/24 -p udp --dport 53 -j ACCEPT
+$IPT -t filter -A OUTPUT -p tcp --dport 53 -j ACCEPT
+$IPT -t filter -A OUTPUT -p udp --dport 53 -j ACCEPT
+
+$IPT -t filter -A INPUT -i enp0s3 -d 192.168.1.185 -p udp --dport 2054 -j ACCEPT
+
+$IPT -t filter -A FORWARD -i enp0s8 -o enp0s3 -s 192.168.33.0/24 -p tcp --dport 80 -j ACCEPT
+$IPT -t filter -A FORWARD -i enp0s8 -o enp0s3 -s 192.168.33.0/24 -p tcp --dport 443 -j ACCEPT
+iptables -t filter -A FORWARD -i enp0s3 -o enp0s8 -d 192.168.33.50/32 -p tcp --dport 443 -j ACCEPT
+
+$IPT -t filter -A FORWARD -i enp0s8 -o enp0s3 -p udp --dport 33437:33500 -j ACCEPT
+#$IPT -t filter -A FORWARD -p tcp --dport 222 -j ACCEPT
+#$IPT -t filter -A INPUT -p tcp --dport 222 -j ACCEPT
+
+# SSH local
+$IPT -A INPUT -p tcp -i $IFACE_LAN --dport 22 -j ACCEPT
+
+# SSH limité en provenance de l'extérieur
+#$IPT -A INPUT -p tcp -i $IFACE_INET --dport 22 -m state --state NEW -m recent --set --name SSH
+#$IPT -A INPUT -p tcp -i $IFACE_INET --dport 22 -m state --state NEW -m recent --update --seconds 60 --hitcount 2 --rttl --name SSH -j DROP
+$IPT -A INPUT -p tcp --dport 22 -j ACCEPT
+
+# Activer le relais des paquets
+if [ $MASQ = 'yes' ]; then
+  $IPT -t nat -A POSTROUTING -o $IFACE_INET -s $IFACE_LAN_IP -j MASQUERADE
+  iptables -t nat -A POSTROUTING -d 192.168.33.50/32 -o enp0s8 -p tcp --dport 80 -j SNAT --to-source 192.168.43.222
+  iptables -t nat -A POSTROUTING -d 192.168.33.50/32 -o enp0s8 -p tcp --dport 443 -j SNAT --to-source 192.168.43.222
+  iptables -t nat -A POSTROUTING -d 192.168.33.50/32 -o enp0s8 -p tcp --dport 443 -j SNAT --to-source 192.168.1.8
+  iptables -t nat -A POSTROUTING -d 192.168.33.50/32 -o enp0s8 -p tcp --dport 80 -j SNAT --to-source 192.168.1.8
+  $SYS -q -w net.ipv4.ip_forward=1
+fi
+
+# Enregistrer les connexions refusées
+#$IPT -A INPUT -m limit --limit 2/min -j LOG --log-prefix "+++ IPv4 packet rejected +++ "
+
+$IPT -t filter -A OUTPUT -p tcp --dport 80 -j ACCEPT
+$IPT -t filter -A OUTPUT -p udp --dport 123 -j ACCEPT
+$IPT -t filter -A FORWARD -p udp --dport 123 -j ACCEPT
+iptables -A FORWARD -i enp0s3 -o enp0s8 -d 192.168.33.50 -p tcp --dport 80 -j ACCEPT
+$IPT -t filter -A OUTPUT -p tcp --dport 443 -j ACCEPT
+$IPT -t filter -A OUTPUT -p tcp --dport 22 -j ACCEPT
+$IPT -t filter -A OUTPUT -p tcp --dport 123 -j ACCEPT
+$IPT -t filter -A FORWARD -p tcp --dport 22 -j ACCEPT
+
+$IPT -A INPUT -j LOG --log-prefix   "INPUT_DROP   ] "
+$IPT -A OUTPUT -j LOG --log-prefix  "OUTPUT_DROP  ] "
+$IPT -A FORWARD -j LOG --log-prefix "FORWARD_DROP ] "
+
+$IPT -A INPUT -j DROP
+$IPT -A FORWARD -j DROP
+#iptables -t nat -A PREROUTING -d  192.168.1.185/32 -p tcp --dport 222 -j DNAT --to-destination  192.168.33.50
+#iptables -t nat -A PREROUTING -d  192.168.43.185/32 -p tcp --dport 222 -j DNAT --to-destination  192.168.33.50
+iptables -t nat -A PREROUTING -d  192.168.1.5/32 -p tcp --dport 22 -j DNAT --to-destination  192.168.33.100
+iptables -t nat -A PREROUTING -d  192.168.1.8/32 -p tcp --dport 22 -j DNAT --to-destination  192.168.33.50
+iptables -t nat -A PREROUTING -d  192.168.1.6/32 -p tcp --dport 22 -j DNAT --to-destination  192.168.33.180
+iptables -t nat -A PREROUTING -d  192.168.43.5/32 -p tcp --dport 22 -j DNAT --to-destination  192.168.33.100
+iptables -t nat -A PREROUTING -d  192.168.43.8/32 -p tcp --dport 22 -j DNAT --to-destination  192.168.33.50
+iptables -t nat -A PREROUTING -d  192.168.43.6/32 -p tcp --dport 22 -j DNAT --to-destination  192.168.33.180
+iptables -t nat -A PREROUTING -d  192.168.1.8/32 -p tcp --dport 80 -j DNAT --to-destination  192.168.33.50
+iptables -t nat -A PREROUTING -d  192.168.1.8/32 -p tcp --dport 443 -j DNAT --to-destination  192.168.33.50
+iptables -t nat -A PREROUTING -d  192.168.43.8/32 -p tcp --dport 80 -j DNAT --to-destination  192.168.33.50
+iptables -t nat -A PREROUTING -d  192.168.43.8/32 -p tcp --dport 443 -j DNAT --to-destination  192.168.33.50
+#iptables -t nat -A PREROUTING -j LOG --log-prefix   "PREROUTING   ] "
+#iptables -t nat -A POSTROUTING -j LOG --log-prefix   "POSTROUTING   ] "
+#iptables -t nat -A PREROUTING -d  192.168.1.185/32 -p tcp ! --dport 22 -j DNAT --to-destination  192.168.33.10
+#iptables -t nat -A PREROUTING -d  192.168.1.185/32 -p tcp --dport 80 -j DNAT --to-destination  192.168.33.50
+#iptables -t nat -A PREROUTING -d  192.168.1.185/32 -p tcp --dport 443 -j DNAT --to-destination  192.168.33.50
+# Enregistrer la configuration
+#$SERVICE iptables save
+;;
+esac
