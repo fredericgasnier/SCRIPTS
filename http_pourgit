@@ -1,0 +1,180 @@
+ServerRoot "/etc/httpd"
+Listen 192.168.33.50:443
+Include conf.modules.d/*.conf
+User apache
+Group apache
+ServerAdmin root@localhost
+<VirtualHost 192.168.33.50:443>
+        ServerName www.test.fred.lan
+        DocumentRoot "/var/www/html"
+        <Directory /var/www/html>
+                AllowOverride   All
+                Order           deny,allow
+                Allow           from all
+                Require all granted
+        </Directory>
+  SSLEngine on
+  SSLCertificateFile /etc/ssl/FREDhttps.cer
+  SSLCertificateKeyFile /etc/ssl/server.key
+  SSLVerifyClient require
+  SSLVerifyDepth 1
+  SSLCACertificateFile /etc/ssl/ca.cer
+  ProxyRequests Off
+</VirtualHost>
+<Directory />
+    AllowOverride none
+    Require all denied
+</Directory>
+DocumentRoot "/var/www/html"
+<Directory "/var/www">
+    AllowOverride None
+    Require all granted
+</Directory>
+<Directory "/var/www/html">
+    AllowOverride None
+    Require all denied
+</Directory>
+<IfModule dir_module>
+    DirectoryIndex index.html
+</IfModule>
+<Files ".ht*">
+    Require all denied
+</Files>
+ErrorLog "logs/error_log"
+LogLevel warn
+<IfModule log_config_module>
+    LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
+    LogFormat "%h %l %u %t \"%r\" %>s %b" common
+    <IfModule logio_module>
+      LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %I %O" combinedio
+    </IfModule>
+    CustomLog "logs/access_log" common
+    CustomLog "logs/access_log" combined
+</IfModule>
+<IfModule alias_module>
+    ScriptAlias /cgi-bin/ "/var/www/cgi-bin/"
+</IfModule>
+<Directory "/var/www/cgi-bin">
+    AllowOverride None
+    Options None
+    Require all granted
+</Directory>
+<IfModule mime_module>
+    TypesConfig /etc/mime.types
+    AddType application/x-compress .Z
+    AddType application/x-gzip .gz .tgz
+    AddType text/html .shtml
+    AddOutputFilter INCLUDES .shtml
+</IfModule>
+AddDefaultCharset UTF-8
+<IfModule mime_magic_module>
+    MIMEMagicFile conf/magic
+</IfModule>
+EnableSendfile on
+IncludeOptional conf.d/*.conf
+<VirtualHost 192.168.33.50:443>
+        ServerName www.test2.fred.lan
+        KeepAlive On
+        DirectoryIndex index.php
+        DocumentRoot "/srv/www/test2"
+        <Directory /srv/www/test2>
+                AllowOverride   All
+                Order           allow,deny
+                Allow           from all
+                Require		all granted
+        </Directory>
+  SSLEngine on
+  SSLCertificateFile /etc/ssl/FREDhttps.cer
+  SSLCertificateKeyFile /etc/ssl/server.key
+  SSLVerifyClient require
+  SSLVerifyDepth 1
+  SSLCACertificateFile /etc/ssl/ca.cer
+  ProxyRequests Off
+</VirtualHost>
+<VirtualHost 192.168.33.50:443>
+        ServerName www.mediawiki.fred.lan
+        DocumentRoot "/srv/www/mediawiki"
+        <Directory /srv/www/mediawiki>
+                AllowOverride   All
+                Order           deny,allow
+                Allow           from all
+                Require all granted
+        </Directory>
+  SSLEngine on
+  SSLCertificateFile /etc/ssl/FREDhttps.cer
+  SSLCertificateKeyFile /etc/ssl/server.key
+  SSLVerifyClient require
+  SSLVerifyDepth 1
+  SSLCACertificateFile /etc/ssl/ca.cer
+  ProxyRequests Off
+</VirtualHost>
+<VirtualHost 192.168.33.50:443>
+        ServerName www.jenkins.fred.lan
+        ProxyVia On
+        ProxyRequests Off
+        ProxyPass "/jenkins" "ajp://127.0.0.1:8009/jenkins"
+        ProxyPassReverse "/jenkins" "ajp://127.0.0.1:8009/jenkins"
+        ProxyPreserveHost on
+        ErrorLog /var/log/httpd/www.TonApplication.com-error.log
+        LogLevel warn
+        CustomLog /var/log/httpd/www.TonApplication.com-access.log combined
+  SSLEngine on
+  SSLCertificateFile /etc/ssl/FREDhttps.cer
+  SSLCertificateKeyFile /etc/ssl/server.key
+  SSLVerifyClient require
+  SSLVerifyDepth 1
+  SSLCACertificateFile /etc/ssl/ca.cer
+  ProxyRequests Off
+</VirtualHost>
+<VirtualHost 192.168.33.50:443>
+        ServerName www.jetest.fred.lan
+        ProxyVia On
+        ProxyRequests Off
+        ProxyPass "/projet" "ajp://127.0.0.1:8009/projet"
+        ProxyPassReverse "/projet" "ajp://127.0.0.1:8009/projet"
+        ProxyPreserveHost on
+        ErrorLog /var/log/httpd/www.TonApplication.com-error.log
+        LogLevel warn
+        CustomLog /var/log/httpd/www.TonApplication.com-access.log combined
+  SSLEngine on
+  SSLCertificateFile /etc/ssl/FREDhttps.cer
+  SSLCertificateKeyFile /etc/ssl/server.key
+  SSLVerifyClient require
+  SSLVerifyDepth 1
+  SSLCACertificateFile /etc/ssl/ca.cer
+  ProxyRequests Off
+</VirtualHost>
+<VirtualHost 192.168.33.50:443>
+        ServerName www.formation.fred.lan
+        DocumentRoot "/srv/www/formation"
+        <Directory /srv/www/formation>
+                AllowOverride   All
+                Order           deny,allow
+                Allow           from all
+                Require all granted
+        </Directory>
+  SSLEngine on
+  SSLCertificateFile /etc/ssl/FREDhttps.cer
+  SSLCertificateKeyFile /etc/ssl/server.key
+  SSLVerifyClient require
+  SSLVerifyDepth 1
+  SSLCACertificateFile /etc/ssl/ca.cer
+  ProxyRequests Off
+</VirtualHost>
+<VirtualHost 192.168.33.50:443>
+        ServerName www.slack.fred.lan
+        DocumentRoot "/srv/www/slack"
+        <Directory /srv/www/slack>
+                AllowOverride   All
+                Order           deny,allow
+                Allow           from all
+                Require all granted
+        </Directory>
+  SSLEngine on
+  SSLCertificateFile /etc/ssl/FREDhttps.cer
+  SSLCertificateKeyFile /etc/ssl/server.key
+  SSLVerifyClient require
+  SSLVerifyDepth 1
+  SSLCACertificateFile /etc/ssl/ca.cer
+  ProxyRequests Off
+</VirtualHost>
