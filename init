@@ -1,0 +1,30 @@
+#!/bin/ksh
+
+export reponse
+export arg=$1
+echo "Veux-tu changer de config réseau : "
+read rep
+if [[ $rep == ?(y|Y|o|O) ]]
+then
+  echo "Config mais ou por [m|p]: "
+  read reponse
+    if [[ $reponse == "m" ]]
+    then
+      cp -p /root/conf.mais /etc/sysconfig/network-scripts/ifcfg-enp0s3
+      cp -p /root/conf.mais0 /etc/sysconfig/network-scripts/ifcfg-enp0s3:0
+      cp -p /root/conf.mais1 /etc/sysconfig/network-scripts/ifcfg-enp0s3:1
+      cp -p /root/conf.mais2 /etc/sysconfig/network-scripts/ifcfg-enp0s3:2
+      cp -p /root/conf.mais3 /etc/sysconfig/network-scripts/ifcfg-enp0s3:3
+      /sbin/init_20190204 $arg
+    elif [[ $reponse == "p" ]]
+    then
+      cp -p /root/conf.por /etc/sysconfig/network-scripts/ifcfg-enp0s3
+      cp -p /root/conf.por0 /etc/sysconfig/network-scripts/ifcfg-enp0s3:0
+      cp -p /root/conf.por1 /etc/sysconfig/network-scripts/ifcfg-enp0s3:1
+      cp -p /root/conf.por2 /etc/sysconfig/network-scripts/ifcfg-enp0s3:2
+      cp -p /root/conf.por3 /etc/sysconfig/network-scripts/ifcfg-enp0s3:3
+      /sbin/init_20190204 $arg
+    fi
+else
+/sbin/init_20190204 $arg
+fi
