@@ -129,12 +129,12 @@ $IPT -A OUTPUT -j LOG --log-prefix  "OUTPUT_DROP  ] "
 #PREROUTING
 iptables -t nat -A PREROUTING -d  192.168.1.5/32 -p tcp --dport 22 -j DNAT --to-destination  192.168.33.100
 iptables -t nat -A PREROUTING -d  192.168.1.8/32 -p tcp --dport 22 -j DNAT --to-destination  192.168.33.50
-#iptables -t nat -A PREROUTING -d  192.168.1.200/32 -p tcp --dport 22 -j DNAT --to-destination  192.168.33.2
+iptables -t nat -A PREROUTING -d  192.168.1.200/32 -p tcp --dport 22 -j DNAT --to-destination  192.168.33.2
 iptables -t nat -A PREROUTING -d  192.168.1.6/32 -p tcp --dport 22 -j DNAT --to-destination  192.168.33.180
 iptables -t nat -A PREROUTING -d  192.168.43.5/32 -p tcp --dport 22 -j DNAT --to-destination  192.168.33.100
 iptables -t nat -A PREROUTING -d  192.168.43.8/32 -p tcp --dport 22 -j DNAT --to-destination  192.168.33.50
 iptables -t nat -A PREROUTING -d  192.168.43.6/32 -p tcp --dport 22 -j DNAT --to-destination  192.168.33.180
-#iptables -t nat -A PREROUTING -d  192.168.43.200/32 -p tcp --dport 22 -j DNAT --to-destination  192.168.33.2
+iptables -t nat -A PREROUTING -d  192.168.43.200/32 -p tcp --dport 22 -j DNAT --to-destination  192.168.33.2
 iptables -t nat -A PREROUTING -d  192.168.1.8/32 -p tcp --dport 80 -j DNAT --to-destination  192.168.33.50
 iptables -t nat -A PREROUTING -d  192.168.1.8/32 -p tcp --dport 443 -j DNAT --to-destination  192.168.33.50
 iptables -t nat -A PREROUTING -d  192.168.43.8/32 -p tcp --dport 80 -j DNAT --to-destination  192.168.33.50
