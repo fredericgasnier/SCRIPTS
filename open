@@ -1,0 +1,2 @@
+openssl s_client -connect iperf.fr:443 -status -servername iperf.fr
+openssl s_client -connect apache1:443 -status -servername www.jenkins.fred.lan
