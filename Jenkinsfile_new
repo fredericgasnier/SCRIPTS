@@ -1,8 +1,8 @@
 pipeline {
     agent any
 
+ if (Param.equals("mat")) {
     stages {
-        if (Param.equals("mat")) {
         stage('Init') {
             steps {
                 echo "Testing..."
